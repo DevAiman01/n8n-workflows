@@ -1,0 +1,654 @@
+{
+  "name": "Play Store Ratings",
+  "nodes": [
+    {
+      "parameters": {
+        "fieldToSplitOut": "reviews",
+        "include": "=",
+        "options": {
+          "destinationFieldName": ""
+        }
+      },
+      "id": "976a0252-5685-4678-83d8-925d06853179",
+      "name": "Split Out4",
+      "type": "n8n-nodes-base.splitOut",
+      "position": [
+        2112,
+        464
+      ],
+      "typeVersion": 1,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "id": "9ad91b18-e9c3-4e43-b301-cc833747fbe2",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        1664,
+        536
+      ],
+      "typeVersion": 3,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "id": "fd00f503-709f-472d-b0c3-8e8d617f8506",
+      "name": "Loop Over Items1",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        1664,
+        1248
+      ],
+      "typeVersion": 3,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a summary of store reviews submitted. Start your message with \"Hi! This is your Google Play Store AI agent for *{{ $json.app_package_id }}*\". In your output, include the number of reviews you processed to create the summary. The summary should be split into two groups: a summary about positive reviews and a summary about negative reviews. In your summary include also a breakdown of star ratings, ie. how many reviews there were for each star rating. Also include the average star rating.",
+        "options": {
+          "systemMessage": "=Your job is to respond to prompts using the information you gather from the Google Play Store reviews of an app called {{$json.app_name}}. Your main role is to help your users to gain insights from store review without having to read reviews one by one. Store review usually have star ratings with 1 star being the lowest rating and 5 star being the highest rating. They can also have a text description where the user writes a review about their experience with the app. These can be negative reviews or positive reviews. The lower the star rating the more likely that the review is negative."
+        }
+      },
+      "id": "c67fa141-8df9-4010-8d46-b038bc540381",
+      "name": "AI Agent - Summary creator",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        1920,
+        1072
+      ],
+      "typeVersion": 2,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ed79836f-8032-4daa-afc1-d0170157c8a0",
+              "name": "=app_name",
+              "type": "array",
+              "value": "[   {\"app_name\": \"WhatsApp\", \"app_package_id\": \"com.whatsapp\"},   {\"app_name\": \"TikTok\", \"app_package_id\": \"com.zhiliaoapp.musically\"},   {\"app_name\": \"Snapchat\", \"app_package_id\": \"com.snapchat.android\"} ]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "83cf0fc5-66cc-4598-b354-6dd0f4f9ef1c",
+      "name": "Set the bundle ids",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1216,
+        536
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "id": "0bcfc993-e58e-49d6-aeba-ad7accb2087b",
+      "name": "Daily Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        992,
+        536
+      ],
+      "notesInFlow": true,
+      "typeVersion": 1.2,
+      "notes": "Daily at 10am "
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "app_name[0].app_name",
+        "options": {}
+      },
+      "id": "53df7cef-c399-48a5-bd10-82ec4547999a",
+      "name": "Split Out",
+      "type": "n8n-nodes-base.splitOut",
+      "position": [
+        1440,
+        536
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "url": "=https://serpapi.com/search.json?engine=google_play_product&product_id=com.whatsapp&api_key=84189dd27285af4fa69b1819bbc837eab5b68286d4f5c2c3993cc555e22c60d8&store=apps\n",
+        "options": {}
+      },
+      "id": "68a7de8f-ad17-4b8b-8a5e-fba73b66794f",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1888,
+        464
+      ],
+      "typeVersion": 4.2,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "e5cc101a-9e06-4f33-8578-63c4acc66042",
+              "operator": {
+                "type": "dateTime",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.reviews.comments[0].userComment.lastModified.seconds.toDateTime('s').toISODate() }}",
+              "rightValue": "={{$today.minus({days: 1})}}\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "beb2b08e-f53d-4b36-82a8-ae282ae477ba",
+      "name": "Filter",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        2336,
+        464
+      ],
+      "notesInFlow": true,
+      "typeVersion": 2.2,
+      "alwaysOutputData": true,
+      "notes": "Fetch yesterday's reviews"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "mode": "list",
+          "value": "n8n-store-reviews",
+          "cachedResultName": "n8n-store-reviews"
+        },
+        "options": {
+          "clearNamespace": "={{ new Date().getDay() === 6 }}",
+          "pineconeNamespace": "=google_play_store_reviews_{{ $('Split Out').item.json.apps }}"
+        }
+      },
+      "id": "3107ffd9-94ea-43ef-9fad-d0c8c75c32b4",
+      "name": "Pinecone Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "position": [
+        2560,
+        536
+      ],
+      "typeVersion": 1.3,
+      "credentials": {
+        "pineconeApi": {
+          "id": "T3rTTXsaBR9VAKTB",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a7611074-702b-496a-bef4-be4eeffda2b9",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [
+        2448,
+        768
+      ],
+      "typeVersion": 1.2,
+      "credentials": {
+        "openAiApi": {
+          "id": "AMO4pBG9jLq3FRBp",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "=comment:{{ $('HTTP Request').item.json.reviews }} | star rating: {{ $('HTTP Request').item.json.ratings }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "star_rating",
+                "value": "={{ $('HTTP Request').item.json.ratings }}"
+              },
+              {
+                "name": "Reviews",
+                "value": "={{ $('HTTP Request').item.json.reviews }}\n"
+              },
+              {
+                "name": "Similar results",
+                "value": "={{ $('HTTP Request').item.json.similar_results }}"
+              },
+              {
+                "name": "whats new",
+                "value": "={{ $('HTTP Request').item.json.what_s_new }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "d6f865d0-fba7-456e-9bed-b531b11250c5",
+      "name": "Default Data Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "position": [
+        2696,
+        760
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ae58d365-5396-489f-8906-5a8a10cb9070",
+              "name": "app_package_id",
+              "value": "com.whatsapp",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fd7a2f0c-69f4-446e-978c-1b67d0041f87",
+      "name": "Set app details",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1216,
+        1248
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "app_package_id",
+        "options": {}
+      },
+      "id": "3e88c0ea-e6d5-412c-9aae-a702220d626d",
+      "name": "Split Out1",
+      "type": "n8n-nodes-base.splitOut",
+      "position": [
+        1440,
+        1248
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "id": "4eac3a49-5126-47b6-b748-fb97770dbab8",
+      "name": "OpenAI Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        1888,
+        1296
+      ],
+      "typeVersion": 1.2,
+      "credentials": {
+        "openAiApi": {
+          "id": "AMO4pBG9jLq3FRBp",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "044cd2a3-c3d4-41a2-8c46-4291b3ba0ac8",
+      "name": "Embeddings OpenAI1",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [
+        2096,
+        1504
+      ],
+      "typeVersion": 1.2,
+      "credentials": {
+        "openAiApi": {
+          "id": "AMO4pBG9jLq3FRBp",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "This is the vector store for the Google Play reviews data you need to answer queries",
+        "pineconeIndex": {
+          "__rl": true,
+          "mode": "list",
+          "value": "n8n-store-reviews",
+          "cachedResultName": "n8n-store-reviews"
+        },
+        "topK": 500,
+        "options": {
+          "pineconeNamespace": "=google_play_store_reviews_{{ $json.app_package_id }}"
+        }
+      },
+      "id": "ec306b60-8dbb-4ea9-a4c3-fa5ce4807f1d",
+      "name": "Pinecone Vector Store1",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "position": [
+        2016,
+        1296
+      ],
+      "typeVersion": 1.3,
+      "credentials": {
+        "pineconeApi": {
+          "id": "T3rTTXsaBR9VAKTB",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0A0N1ND5NG",
+          "mode": "list",
+          "cachedResultName": "first-channel"
+        },
+        "text": "={{ $json.output }}",
+        "otherOptions": {}
+      },
+      "id": "053e5a35-875e-4e16-a788-ec2c7eea8425",
+      "name": "Send to Slack channel",
+      "type": "n8n-nodes-base.slack",
+      "position": [
+        2384,
+        1248
+      ],
+      "webhookId": "91dd6021-c694-4470-9013-53d5f2e213f8",
+      "typeVersion": 2.3,
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "de1xu3FgwEP74XPC",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                5
+              ],
+              "triggerAtHour": 11
+            }
+          ]
+        }
+      },
+      "id": "071bb344-81f1-45f6-bd41-b3df56e7ef4f",
+      "name": "Weekly trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        992,
+        1248
+      ],
+      "notesInFlow": true,
+      "typeVersion": 1.2,
+      "notes": "On Fridays at 11am"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out4": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Split Out4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set the bundle ids",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly trigger": {
+      "main": [
+        [
+          {
+            "node": "Set app details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set app details": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "AI Agent - Summary creator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Summary creator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set the bundle ids": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to Slack channel": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent - Summary creator",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - Summary creator": {
+      "main": [
+        [
+          {
+            "node": "Send to Slack channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "f0b3da9c-d0d9-4abe-9717-f7f05f2975c3",
+  "meta": {
+    "templateId": "10605",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "53c0541b42b3209e5d4396a62c19d0d9758b2cf2cd23d6f62bb93a9a2817a90a"
+  },
+  "id": "b9eY3e64USdINXx8",
+  "tags": []
+}
